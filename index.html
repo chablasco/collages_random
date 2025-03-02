@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Masked Image Layers - p5.js</title>
+  <title>CB Masked Image Layers - p5.js</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
   <style>
     body { margin: 0; overflow: hidden; }
@@ -11,37 +11,37 @@
 </head>
 <body>
   <script>
-    // Global arrays for our offscreen layers and masks
     let layers = [];
     let masks = [];
-    // Preloaded images (you must supply your own file paths here)
     let preloadedImages = [];
+    // Supply your image file paths here. Make sure these images exist.
     let imagePaths = [
-      // List your image file paths here; any file path containing "Store" will be ignored.
       "images/1.jpg",
       "images/2.jpg",
       "images/3.jpg",
       "images/4.jpg"
-      // ... add more images if available
     ];
+    let numLayers;
     
-    let numLayers; // will be randomized between 5 and 55 in setup
-
-    // Preload images that do not include "Store" in their filename
     function preload() {
+      // Load images that do NOT include "Store" in their filename.
       for (let i = 0; i < imagePaths.length; i++) {
         if (!imagePaths[i].includes("Store")) {
-          preloadedImages.push(loadImage(imagePaths[i]));
+          // Add loadImage with success/error callbacks for debugging.
+          preloadedImages.push(loadImage(
+            imagePaths[i],
+            () => { console.log(imagePaths[i] + " loaded."); },
+            () => { console.error("Failed to load " + imagePaths[i]); }
+          ));
         }
       }
-      console.log(preloadedImages.length + " images loaded!");
+      console.log("Total images loaded: " + preloadedImages.length);
     }
     
     function setup() {
       createCanvas(windowWidth, windowHeight);
-      // Choose a random number of layers between 5 and 55
+      // Random number of layers between 5 and 55
       numLayers = int(random(5, 55));
-      // Create the offscreen graphics for each layer and its mask
       for (let i = 0; i < numLayers; i++) {
         layers.push(createGraphics(width, height));
         masks.push(createGraphics(width, height));
@@ -50,29 +50,34 @@
     }
     
     function draw() {
-      // (In the original code amount is re-randomized each frame, but we loop over a fixed set of layers.)
-      let currentAmount = int(random(3, 90));
-      
       background(0);
       
+      // If no images loaded, display a message
+      if (preloadedImages.length === 0) {
+        fill(255);
+        textSize(32);
+        textAlign(CENTER, CENTER);
+        text("No images loaded", width / 2, height / 2);
+        return;
+      }
+      
+      // Process each layer
       for (let i = 0; i < layers.length; i++) {
-        // --- Prepare the image layer ---
         let gLayer = layers[i];
-        // Pick a random image from our preloaded images
+        // Pick a random preloaded image
         let img = random(preloadedImages);
-        // Make a copy so that we don't permanently change the preloaded image
-        let imgCopy = img.get();
-        // Resize the copy so its width matches the canvas (height adjusts to preserve ratio)
-        imgCopy.resize(width, 0);
+        if (img) {
+          // Get a copy and resize it to canvas width (keeping aspect ratio)
+          let imgCopy = img.get();
+          imgCopy.resize(width, 0);
+          gLayer.clear();
+          gLayer.image(imgCopy, 0, 0);
+        }
         
-        // Draw the image to the offscreen graphics
-        gLayer.clear();
-        gLayer.image(imgCopy, 0, 0);
-        
-        // --- Prepare the mask ---
+        // Create the mask on its offscreen buffer
         let gMask = masks[i];
         gMask.clear();
-        // Set white background (visible areas) then draw a black shape (masked-out areas)
+        // White background: areas to remain visible
         gMask.background(255);
         gMask.noStroke();
         gMask.fill(0);
@@ -86,20 +91,19 @@
         gMask.endShape(CLOSE);
         // Occasionally add a circle to the mask
         if (random(1) < 0.1) {
-          gMask.circle(random(width), random(height), random(width/2));
+          gMask.circle(random(width), random(height), random(width / 2));
         }
         
-        // --- Apply the mask ---
-        // In p5.js, mask() works on p5.Image objects.
-        let layerImg = gLayer.get();  // Capture the drawn image
-        let maskImg = gMask.get();      // Capture the mask graphics
-        layerImg.mask(maskImg);         // Apply the mask
-        
-        // Draw the resulting masked image on the main canvas
+        // Capture the drawn image and mask as p5.Image objects
+        let layerImg = gLayer.get();
+        let maskImg = gMask.get();
+        // Apply the mask (black areas become transparent)
+        layerImg.mask(maskImg);
+        // Draw the masked layer on the main canvas
         image(layerImg, 0, 0);
       }
       
-      // Stop the sketch after 300 frames (as in the original Processing code)
+      // Stop the sketch after 300 frames (as in Processing)
       if (frameCount === 300) {
         noLoop();
       }
@@ -107,7 +111,7 @@
     
     function windowResized() {
       resizeCanvas(windowWidth, windowHeight);
-      // Recreate the graphics buffers to match the new window size
+      // Recreate the graphics buffers to match the new canvas size
       layers = [];
       masks = [];
       for (let i = 0; i < numLayers; i++) {
