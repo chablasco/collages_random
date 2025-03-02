@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>CB Masked Image Layers - Optimized</title>
+  <title>Masked Image Layers - p5.js</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
   <style>
     body { margin: 0; overflow: hidden; }
@@ -11,96 +11,109 @@
 </head>
 <body>
   <script>
-    let images = [];
-    let maskedLayers = [];
-    let maskGraphics = [];
-    const amount = 5; // Number of layers
-    const imageFilenames = [
-      "assets/1.jpg",
-      "assets/2.jpg",
-      "assets/3.jpg",
-      "assets/4.jpg"
+    // Global arrays for our offscreen layers and masks
+    let layers = [];
+    let masks = [];
+    // Preloaded images (you must supply your own file paths here)
+    let preloadedImages = [];
+    let imagePaths = [
+      // List your image file paths here; any file path containing "Store" will be ignored.
+      "images/1.jpg",
+      "images/2.jpg",
+      "images/3.jpg",
+      "images/4.jpg"
+      // ... add more images if available
     ];
+    
+    let numLayers; // will be randomized between 5 and 55 in setup
 
+    // Preload images that do not include "Store" in their filename
     function preload() {
-      for (let filename of imageFilenames) {
-        images.push(loadImage(filename));
+      for (let i = 0; i < imagePaths.length; i++) {
+        if (!imagePaths[i].includes("Store")) {
+          preloadedImages.push(loadImage(imagePaths[i]));
+        }
       }
+      console.log(preloadedImages.length + " images loaded!");
     }
-
+    
     function setup() {
       createCanvas(windowWidth, windowHeight);
-      resizeImages(); // Resize images once based on current canvas
-      createBuffers();
-    }
-
-    // Create/recreate the offscreen buffers
-    function createBuffers() {
-      maskedLayers = [];
-      maskGraphics = [];
-      for (let i = 0; i < amount; i++) {
-        maskedLayers.push(createGraphics(width, height));
-        maskGraphics.push(createGraphics(width, height));
+      // Choose a random number of layers between 5 and 55
+      numLayers = int(random(5, 55));
+      // Create the offscreen graphics for each layer and its mask
+      for (let i = 0; i < numLayers; i++) {
+        layers.push(createGraphics(width, height));
+        masks.push(createGraphics(width, height));
       }
+      background(0);
     }
-
-    // Resize all loaded images to canvas width (maintaining aspect ratio)
-    function resizeImages() {
-      for (let img of images) {
-        img.resize(width, 0);
-      }
-    }
-
-    // Generate an organic mask shape on the provided graphics buffer
-    function generateMask(gfx) {
-      gfx.clear();
-      gfx.fill(255);
-      gfx.noStroke();
-      gfx.beginShape();
-      // Create a random organic shape
-      for (let j = 0; j < 12; j++) {
-        let x = random(-width * 0.5, width * 1.5);
-        let y = random(-height * 0.5, height * 1.5);
-        gfx.curveVertex(x, y);
-      }
-      gfx.endShape(CLOSE);
-      // Occasionally add an ellipse for extra variation
-      if (random(1) < 0.2) {
-        gfx.ellipse(random(width), random(height), random(width / 3));
-      }
-    }
-
+    
     function draw() {
+      // (In the original code amount is re-randomized each frame, but we loop over a fixed set of layers.)
+      let currentAmount = int(random(3, 90));
+      
       background(0);
       
-      for (let i = 0; i < amount; i++) {
-        // Pick a random pre-resized image
-        let img = random(images);
+      for (let i = 0; i < layers.length; i++) {
+        // --- Prepare the image layer ---
+        let gLayer = layers[i];
+        // Pick a random image from our preloaded images
+        let img = random(preloadedImages);
+        // Make a copy so that we don't permanently change the preloaded image
+        let imgCopy = img.get();
+        // Resize the copy so its width matches the canvas (height adjusts to preserve ratio)
+        imgCopy.resize(width, 0);
         
-        // Generate a new mask for this layer
-        let maskGfx = maskGraphics[i];
-        generateMask(maskGfx);
-
-        // Prepare the offscreen graphics for this layer
-        let maskedLayer = maskedLayers[i];
-        maskedLayer.clear();
-        maskedLayer.image(img, 0, 0);
-
-        // Use push/pop to ensure blendMode is only applied to this drawing
-        maskedLayer.push();
-        maskedLayer.blendMode(MULTIPLY);
-        maskedLayer.image(maskGfx, 0, 0);
-        maskedLayer.pop();
-
-        // Draw the masked layer onto the main canvas
-        image(maskedLayer, 0, 0);
+        // Draw the image to the offscreen graphics
+        gLayer.clear();
+        gLayer.image(imgCopy, 0, 0);
+        
+        // --- Prepare the mask ---
+        let gMask = masks[i];
+        gMask.clear();
+        // Set white background (visible areas) then draw a black shape (masked-out areas)
+        gMask.background(255);
+        gMask.noStroke();
+        gMask.fill(0);
+        gMask.beginShape();
+        // Draw an organic shape with 12 curve vertices
+        for (let j = 0; j < 12; j++) {
+          let x = random(-width, width * 2);
+          let y = random(-height, height * 2);
+          gMask.curveVertex(x, y);
+        }
+        gMask.endShape(CLOSE);
+        // Occasionally add a circle to the mask
+        if (random(1) < 0.1) {
+          gMask.circle(random(width), random(height), random(width/2));
+        }
+        
+        // --- Apply the mask ---
+        // In p5.js, mask() works on p5.Image objects.
+        let layerImg = gLayer.get();  // Capture the drawn image
+        let maskImg = gMask.get();      // Capture the mask graphics
+        layerImg.mask(maskImg);         // Apply the mask
+        
+        // Draw the resulting masked image on the main canvas
+        image(layerImg, 0, 0);
+      }
+      
+      // Stop the sketch after 300 frames (as in the original Processing code)
+      if (frameCount === 300) {
+        noLoop();
       }
     }
-
+    
     function windowResized() {
       resizeCanvas(windowWidth, windowHeight);
-      resizeImages();
-      createBuffers();
+      // Recreate the graphics buffers to match the new window size
+      layers = [];
+      masks = [];
+      for (let i = 0; i < numLayers; i++) {
+        layers.push(createGraphics(width, height));
+        masks.push(createGraphics(width, height));
+      }
     }
   </script>
 </body>
