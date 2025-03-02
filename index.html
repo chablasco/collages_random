@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CB Collages Random</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    let images = [];
+    let layers = [];
+    let masks = [];
+    let amount;
+
+    function preload() {
+      // Manually list images inside "assets" folder
+      let imageFilenames = [
+        [
+    "assets/0.jpg",
+    "assets/1.jpg",
+    "assets/2.jpg",
+    "assets/3.jpg",
+    "assets/4.jpg",
+    "assets/5.jpg",
+    "assets/6.jpg",
+    "assets/7.jpg",
+    "assets/8.jpg",
+    "assets/9.jpg",
+    "assets/10.jpg",
+    "assets/11.jpg",
+    "assets/12.jpg",
+    "assets/13.jpg",
+    "assets/14.jpg",
+    "assets/15.jpg",
+    "assets/16.jpg",
+    "assets/17.jpg",
+    "assets/18.jpg",
+    "assets/19.jpg",
+    "assets/20.jpg",
+    "assets/21.jpg",
+    "assets/22.jpg",
+    "assets/23.jpg",
+    "assets/24.jpg",
+    "assets/25.jpg",
+    "assets/26.jpg",
+    "assets/27.jpg",
+    "assets/28.jpg",
+    "assets/29.jpg",
+    "assets/30.jpg"
+];
+      
+      for (let filename of imageFilenames) {
+        images.push(loadImage(filename));
+      }
+    }
+
+    function setup() {
+      createCanvas(windowWidth, windowHeight);
+      amount = int(random(5, 55));
+
+      // Create layers and masks
+      for (let i = 0; i < amount; i++) {
+        layers.push(createGraphics(width, height));
+        masks.push(createGraphics(width, height));
+      }
+    }
+
+    function draw() {
+      amount = int(random(3, 90));
+      background(0);
+      
+      for (let i = 0; i < layers.length; i++) {
+        let l = layers[i];
+        let img = random(images); // Pick a random image
+        img.resize(width, 0);
+        
+        l.clear();
+        l.image(img, 0, 0);
+
+        let m = masks[i];
+        m.clear();
+        m.background(255);
+        m.noStroke();
+        m.fill(0);
+
+        // Create a random mask shape
+        m.beginShape();
+        for (let j = 0; j < 12; j++) {
+          let x = random(-width, width * 2);
+          let y = random(-height, height * 2);
+          m.curveVertex(x, y);
+        }
+        m.endShape(CLOSE);
+
+        if (random(1) < 0.1) {
+          m.ellipse(random(width), random(height), random(width / 2));
+        }
+
+        // Apply the mask
+        l.mask(m);
+        image(l, 0, 0);
+      }
+    }
+
+    function windowResized() {
+      resizeCanvas(windowWidth, windowHeight);
+    }
+  </script>
+</body>
+</html>
