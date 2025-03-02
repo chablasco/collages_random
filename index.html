@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Masked Image Layers</title>
+  <title>CB Masked Image Layers</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
   <style>
     body {
@@ -17,9 +17,8 @@
 <body>
   <script>
     let images = [];
+    let maskedImages = [];
     let amount = 5; // Number of masked images displayed
-    let layers = [];
-    let masks = [];
 
     function preload() {
       // Load images from the "assets" folder (ensure these images exist)
@@ -38,44 +37,49 @@
     function setup() {
       createCanvas(windowWidth, windowHeight);
       for (let i = 0; i < amount; i++) {
-        layers.push(createGraphics(width, height));
-        masks.push(createGraphics(width, height));
+        maskedImages.push(createMaskedImage(random(images)));
       }
     }
 
     function draw() {
       background(0);
 
-      for (let i = 0; i < amount; i++) {
-        let img = random(images); // Pick a random image
-        img.resize(width, 0); // Resize for full width
-
-        let maskGfx = masks[i];
-        maskGfx.clear();
-        maskGfx.background(0); // Black for hidden parts
-        maskGfx.fill(255); // White for visible parts
-
-        // Create a random organic mask
-        maskGfx.beginShape();
-        for (let j = 0; j < 12; j++) {
-          let x = random(-width * 0.5, width * 1.5);
-          let y = random(-height * 0.5, height * 1.5);
-          maskGfx.curveVertex(x, y);
-        }
-        maskGfx.endShape(CLOSE);
-
-        // Occasionally add circles to the mask
-        if (random(1) < 0.2) {
-          maskGfx.ellipse(random(width), random(height), random(width / 3));
-        }
-
-        // Apply mask to a copy of the image
-        let maskedImg = createImage(img.width, img.height);
-        maskedImg.copy(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
-        maskedImg.mask(maskGfx.get()); // Properly apply mask
-
-        image(maskedImg, 0, 0); // Display masked image
+      for (let i = 0; i < maskedImages.length; i++) {
+        image(maskedImages[i], 0, 0, width, height);
       }
+
+      // Refresh masks every 100 frames
+      if (frameCount % 100 === 0) {
+        maskedImages = [];
+        for (let i = 0; i < amount; i++) {
+          maskedImages.push(createMaskedImage(random(images)));
+        }
+      }
+    }
+
+    function createMaskedImage(img) {
+      let maskGfx = createGraphics(img.width, img.height);
+      maskGfx.background(0); // Black (hidden)
+      maskGfx.fill(255); // White (visible)
+
+      // Generate a random organic shape
+      maskGfx.beginShape();
+      for (let j = 0; j < 12; j++) {
+        let x = random(-width * 0.5, width * 1.5);
+        let y = random(-height * 0.5, height * 1.5);
+        maskGfx.curveVertex(x, y);
+      }
+      maskGfx.endShape(CLOSE);
+
+      // Occasionally add circles to the mask
+      if (random(1) < 0.2) {
+        maskGfx.ellipse(random(width), random(height), random(width / 3));
+      }
+
+      // Apply mask
+      let maskedImg = img.get(); // Copy the image
+      maskedImg.mask(maskGfx.get()); // Apply the mask
+      return maskedImg;
     }
 
     function windowResized() {
