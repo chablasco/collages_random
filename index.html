@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>CB Collages Random</title>
+  <title>Collages Randome</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
   <style>
     body {
@@ -22,7 +22,7 @@
     let amount;
 
     function preload() {
-      // Manually list images inside "assets" folder
+      // Load images from "assets" folder (ensure these images exist)
       let imageFilenames = [
         [
     "assets/0.jpg",
@@ -55,7 +55,7 @@
     "assets/28.jpg",
     "assets/29.jpg",
     "assets/30.jpg"
-];
+      ];
       
       for (let filename of imageFilenames) {
         images.push(loadImage(filename));
@@ -64,9 +64,9 @@
 
     function setup() {
       createCanvas(windowWidth, windowHeight);
-      amount = int(random(5, 55));
-
-      // Create layers and masks
+      amount = int(random(5, 15)); // Reduce amount for performance
+      
+      // Create graphics layers and masks
       for (let i = 0; i < amount; i++) {
         layers.push(createGraphics(width, height));
         masks.push(createGraphics(width, height));
@@ -74,24 +74,24 @@
     }
 
     function draw() {
-      amount = int(random(3, 90));
       background(0);
       
       for (let i = 0; i < layers.length; i++) {
         let l = layers[i];
         let img = random(images); // Pick a random image
         img.resize(width, 0);
-        
+
+        // Draw image on layer
         l.clear();
         l.image(img, 0, 0);
 
+        // Create a random mask
         let m = masks[i];
         m.clear();
         m.background(255);
         m.noStroke();
         m.fill(0);
 
-        // Create a random mask shape
         m.beginShape();
         for (let j = 0; j < 12; j++) {
           let x = random(-width, width * 2);
@@ -104,10 +104,17 @@
           m.ellipse(random(width), random(height), random(width / 2));
         }
 
-        // Apply the mask
-        l.mask(m);
-        image(l, 0, 0);
+        // Apply the mask and display the result
+        let maskedImg = applyMask(l, m);
+        image(maskedImg, 0, 0);
       }
+    }
+
+    function applyMask(img, mask) {
+      let masked = createImage(width, height);
+      masked.copy(img, 0, 0, width, height, 0, 0, width, height);
+      masked.mask(mask);
+      return masked;
     }
 
     function windowResized() {
