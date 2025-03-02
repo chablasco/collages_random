@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>CB Masked Image Layers</title>
+  <title>Masked Image Layers</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
   <style>
     body {
@@ -17,8 +17,9 @@
 <body>
   <script>
     let images = [];
-    let maskedImages = [];
-    let amount = 5; // Number of masked images displayed
+    let maskedLayers = [];
+    let maskGraphics = [];
+    let amount = 5; // Number of layers
 
     function preload() {
       // Load images from the "assets" folder (ensure these images exist)
@@ -37,49 +38,46 @@
     function setup() {
       createCanvas(windowWidth, windowHeight);
       for (let i = 0; i < amount; i++) {
-        maskedImages.push(createMaskedImage(random(images)));
+        maskedLayers.push(createGraphics(width, height));
+        maskGraphics.push(createGraphics(width, height));
       }
     }
 
     function draw() {
       background(0);
 
-      for (let i = 0; i < maskedImages.length; i++) {
-        image(maskedImages[i], 0, 0, width, height);
-      }
+      for (let i = 0; i < amount; i++) {
+        let img = random(images);
+        img.resize(width, 0); // Resize to fit the screen
 
-      // Refresh masks every 100 frames
-      if (frameCount % 100 === 0) {
-        maskedImages = [];
-        for (let i = 0; i < amount; i++) {
-          maskedImages.push(createMaskedImage(random(images)));
+        let maskGfx = maskGraphics[i];
+        maskGfx.clear();
+        maskGfx.fill(255);
+        maskGfx.noStroke();
+
+        // Generate an organic mask shape
+        maskGfx.beginShape();
+        for (let j = 0; j < 12; j++) {
+          let x = random(-width * 0.5, width * 1.5);
+          let y = random(-height * 0.5, height * 1.5);
+          maskGfx.curveVertex(x, y);
         }
+        maskGfx.endShape(CLOSE);
+
+        if (random(1) < 0.2) {
+          maskGfx.ellipse(random(width), random(height), random(width / 3));
+        }
+
+        // Draw image and mask using MULTIPLY blend mode
+        let maskedLayer = maskedLayers[i];
+        maskedLayer.clear();
+        maskedLayer.image(img, 0, 0);
+        maskedLayer.blendMode(MULTIPLY);
+        maskedLayer.image(maskGfx, 0, 0);
+
+        // Draw final masked image
+        image(maskedLayer, 0, 0);
       }
-    }
-
-    function createMaskedImage(img) {
-      let maskGfx = createGraphics(img.width, img.height);
-      maskGfx.background(0); // Black (hidden)
-      maskGfx.fill(255); // White (visible)
-
-      // Generate a random organic shape
-      maskGfx.beginShape();
-      for (let j = 0; j < 12; j++) {
-        let x = random(-width * 0.5, width * 1.5);
-        let y = random(-height * 0.5, height * 1.5);
-        maskGfx.curveVertex(x, y);
-      }
-      maskGfx.endShape(CLOSE);
-
-      // Occasionally add circles to the mask
-      if (random(1) < 0.2) {
-        maskGfx.ellipse(random(width), random(height), random(width / 3));
-      }
-
-      // Apply mask
-      let maskedImg = img.get(); // Copy the image
-      maskedImg.mask(maskGfx.get()); // Apply the mask
-      return maskedImg;
     }
 
     function windowResized() {
