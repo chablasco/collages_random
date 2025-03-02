@@ -2,16 +2,11 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Masked Image Layers</title>
+  <title>CB Masked Image Layers - Optimized</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
   <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-    }
-    canvas {
-      display: block;
-    }
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
   </style>
 </head>
 <body>
@@ -19,17 +14,15 @@
     let images = [];
     let maskedLayers = [];
     let maskGraphics = [];
-    let amount = 5; // Number of layers
+    const amount = 5; // Number of layers
+    const imageFilenames = [
+      "assets/1.jpg",
+      "assets/2.jpg",
+      "assets/3.jpg",
+      "assets/4.jpg"
+    ];
 
     function preload() {
-      // Load images from the "assets" folder (ensure these images exist)
-      let imageFilenames = [
-        "assets/1.jpg",
-        "assets/2.jpg",
-        "assets/3.jpg",
-        "assets/4.jpg"
-      ];
-      
       for (let filename of imageFilenames) {
         images.push(loadImage(filename));
       }
@@ -37,51 +30,77 @@
 
     function setup() {
       createCanvas(windowWidth, windowHeight);
+      resizeImages(); // Resize images once based on current canvas
+      createBuffers();
+    }
+
+    // Create/recreate the offscreen buffers
+    function createBuffers() {
+      maskedLayers = [];
+      maskGraphics = [];
       for (let i = 0; i < amount; i++) {
         maskedLayers.push(createGraphics(width, height));
         maskGraphics.push(createGraphics(width, height));
       }
     }
 
+    // Resize all loaded images to canvas width (maintaining aspect ratio)
+    function resizeImages() {
+      for (let img of images) {
+        img.resize(width, 0);
+      }
+    }
+
+    // Generate an organic mask shape on the provided graphics buffer
+    function generateMask(gfx) {
+      gfx.clear();
+      gfx.fill(255);
+      gfx.noStroke();
+      gfx.beginShape();
+      // Create a random organic shape
+      for (let j = 0; j < 12; j++) {
+        let x = random(-width * 0.5, width * 1.5);
+        let y = random(-height * 0.5, height * 1.5);
+        gfx.curveVertex(x, y);
+      }
+      gfx.endShape(CLOSE);
+      // Occasionally add an ellipse for extra variation
+      if (random(1) < 0.2) {
+        gfx.ellipse(random(width), random(height), random(width / 3));
+      }
+    }
+
     function draw() {
       background(0);
-
+      
       for (let i = 0; i < amount; i++) {
+        // Pick a random pre-resized image
         let img = random(images);
-        img.resize(width, 0); // Resize to fit the screen
-
+        
+        // Generate a new mask for this layer
         let maskGfx = maskGraphics[i];
-        maskGfx.clear();
-        maskGfx.fill(255);
-        maskGfx.noStroke();
+        generateMask(maskGfx);
 
-        // Generate an organic mask shape
-        maskGfx.beginShape();
-        for (let j = 0; j < 12; j++) {
-          let x = random(-width * 0.5, width * 1.5);
-          let y = random(-height * 0.5, height * 1.5);
-          maskGfx.curveVertex(x, y);
-        }
-        maskGfx.endShape(CLOSE);
-
-        if (random(1) < 0.2) {
-          maskGfx.ellipse(random(width), random(height), random(width / 3));
-        }
-
-        // Draw image and mask using MULTIPLY blend mode
+        // Prepare the offscreen graphics for this layer
         let maskedLayer = maskedLayers[i];
         maskedLayer.clear();
         maskedLayer.image(img, 0, 0);
+
+        // Use push/pop to ensure blendMode is only applied to this drawing
+        maskedLayer.push();
         maskedLayer.blendMode(MULTIPLY);
         maskedLayer.image(maskGfx, 0, 0);
+        maskedLayer.pop();
 
-        // Draw final masked image
+        // Draw the masked layer onto the main canvas
         image(maskedLayer, 0, 0);
       }
     }
 
     function windowResized() {
       resizeCanvas(windowWidth, windowHeight);
+      resizeImages();
+      createBuffers();
     }
   </script>
 </body>
