@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Collages Randome</title>
+  <title>Masked Image Layers</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
   <style>
     body {
@@ -22,9 +22,9 @@
     let amount;
 
     function preload() {
-      // Load images from "assets" folder (ensure these images exist)
+      // Load images from the "assets" folder (ensure these images exist)
       let imageFilenames = [
-        [
+       [
     "assets/0.jpg",
     "assets/1.jpg",
     "assets/2.jpg",
@@ -64,9 +64,9 @@
 
     function setup() {
       createCanvas(windowWidth, windowHeight);
-      amount = int(random(5, 15)); // Reduce amount for performance
-      
-      // Create graphics layers and masks
+      amount = int(random(5, 15)); // Keep it low for performance
+
+      // Create layers and masks
       for (let i = 0; i < amount; i++) {
         layers.push(createGraphics(width, height));
         masks.push(createGraphics(width, height));
@@ -75,7 +75,7 @@
 
     function draw() {
       background(0);
-      
+
       for (let i = 0; i < layers.length; i++) {
         let l = layers[i];
         let img = random(images); // Pick a random image
@@ -85,35 +85,34 @@
         l.clear();
         l.image(img, 0, 0);
 
-        // Create a random mask
+        // Create a mask with random shapes
         let m = masks[i];
         m.clear();
-        m.background(255);
+        m.background(0); // Black for masked areas
         m.noStroke();
-        m.fill(0);
+        m.fill(255); // White for visible areas
 
         m.beginShape();
-        for (let j = 0; j < 12; j++) {
+        for (let j = 0; j < 10; j++) {
           let x = random(-width, width * 2);
           let y = random(-height, height * 2);
           m.curveVertex(x, y);
         }
         m.endShape(CLOSE);
 
-        if (random(1) < 0.1) {
-          m.ellipse(random(width), random(height), random(width / 2));
+        if (random(1) < 0.2) {
+          m.ellipse(random(width), random(height), random(width / 3));
         }
 
-        // Apply the mask and display the result
-        let maskedImg = applyMask(l, m);
+        // Apply the mask and display
+        let maskedImg = applyMask(img, m);
         image(maskedImg, 0, 0);
       }
     }
 
-    function applyMask(img, mask) {
-      let masked = createImage(width, height);
-      masked.copy(img, 0, 0, width, height, 0, 0, width, height);
-      masked.mask(mask);
+    function applyMask(img, maskGfx) {
+      let masked = img.get(); // Copy the image
+      masked.mask(maskGfx.get()); // Apply mask
       return masked;
     }
 
