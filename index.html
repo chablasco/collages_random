@@ -83,8 +83,8 @@ class Cutout {
     this.pg.beginShape();
 
     for (let i = 0; i < this.amount; i++) {
-      const wiggleX = this.xs[i] + sin(frameCount * 0.02 + i) * 50;
-      const wiggleY = this.ys[i] + cos(frameCount * 0.02 + i) * 50;
+      const wiggleX = this.xs[i] + sin(frameCount * 0.02 + i) * 20;
+      const wiggleY = this.ys[i] + cos(frameCount * 0.02 + i) * 20;
       this.pg.curveVertex(wiggleX, wiggleY);
     }
 
