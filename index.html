@@ -53,16 +53,15 @@
     }
   }
 
-  class Cutout {
+class Cutout {
   constructor(img) {
     this.imgOriginal = img;
     this.img = img.get();
     this.img.resize(width, height);
     this.pg = createGraphics(width, height);
     this.amount = amount;
-    this.speed = random(0.001, 0.005); // very slow for smoothness
-    this.rotation = random(TWO_PI); // initial rotation
-    this.targetRotation = this.rotation;
+    this.speed = random(0.002, 0.01); // slow for smooth rotation
+    this.angle = random(TWO_PI);
     this.xs = [];
     this.ys = [];
 
@@ -73,28 +72,27 @@
   }
 
   display() {
-    // Smooth rotation update
-    this.targetRotation = sin(millis() * this.speed) * PI;
-    this.rotation = lerp(this.rotation, this.targetRotation, 0.05);
+    this.angle += this.speed;
 
     this.pg.clear();
     this.pg.push();
     this.pg.translate(width / 2, height / 2);
-    this.pg.rotate(this.rotation);
-
+    this.pg.rotate(this.angle);
     this.pg.noStroke();
     this.pg.fill(255);
     this.pg.beginShape();
+
     for (let i = 0; i < this.amount; i++) {
-      let offsetX = this.xs[i] + sin(millis() * 0.001 + i) * 50;
-      let offsetY = this.ys[i] + cos(millis() * 0.0012 + i) * 50;
-      this.pg.curveVertex(offsetX, offsetY);
+      const wiggleX = this.xs[i] + sin(frameCount * 0.02 + i) * 50;
+      const wiggleY = this.ys[i] + cos(frameCount * 0.02 + i) * 50;
+      this.pg.curveVertex(wiggleX, wiggleY);
     }
+
     this.pg.endShape(CLOSE);
     this.pg.pop();
 
-    let maskImg = createImage(width, height);
-    maskImg.copy(this.pg, 0, 0, width, height, 0, 0, width, height);
+    // Use pg directly as mask
+    let maskImg = this.pg.get();
     maskImg.filter(GRAY);
 
     let masked = this.img.get();
