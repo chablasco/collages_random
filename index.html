@@ -14,62 +14,31 @@
     let layers = [];
     let masks = [];
     let preloadedImages = [];
-    // Supply your image file paths here. Make sure these images exist.
     let imagePaths = [
-
-    "assets/0.jpg",
-    "assets/1.jpg",
-    "assets/2.jpg",
-    "assets/3.jpg",
-    "assets/4.jpg",
-    "assets/5.jpg",
-    "assets/6.jpg",
-    "assets/7.jpg",
-    "assets/8.jpg",
-    "assets/9.jpg",
-    "assets/10.jpg",
-    "assets/11.jpg",
-    "assets/12.jpg",
-    "assets/13.jpg",
-    "assets/14.jpg",
-    "assets/15.jpg",
-    "assets/16.jpg",
-    "assets/17.jpg",
-    "assets/18.jpg",
-    "assets/19.jpg",
-    "assets/20.jpg",
-    "assets/21.jpg",
-    "assets/23.jpg",
-    "assets/24.jpg",
-    "assets/25.jpg",
-    "assets/26.jpg",
-    "assets/27.jpg",
-    "assets/28.jpg",
-    "assets/29.jpg",
-    "assets/30.jpg"
-
+      "assets/0.jpg", "assets/1.jpg", "assets/2.jpg", "assets/3.jpg", "assets/4.jpg",
+      "assets/5.jpg", "assets/6.jpg", "assets/7.jpg", "assets/8.jpg", "assets/9.jpg",
+      "assets/10.jpg", "assets/11.jpg", "assets/12.jpg", "assets/13.jpg", "assets/14.jpg",
+      "assets/15.jpg", "assets/16.jpg", "assets/17.jpg", "assets/18.jpg", "assets/19.jpg",
+      "assets/20.jpg", "assets/21.jpg", "assets/23.jpg", "assets/24.jpg", "assets/25.jpg",
+      "assets/26.jpg", "assets/27.jpg", "assets/28.jpg", "assets/29.jpg", "assets/30.jpg"
     ];
 
     let numLayers;
-    
+
     function preload() {
-      // Load images that do NOT include "Store" in their filename.
       for (let i = 0; i < imagePaths.length; i++) {
         if (!imagePaths[i].includes("Store")) {
-          // Add loadImage with success/error callbacks for debugging.
           preloadedImages.push(loadImage(
             imagePaths[i],
-            () => { console.log(imagePaths[i] + " loaded."); },
-            () => { console.error("Failed to load " + imagePaths[i]); }
+            () => console.log(imagePaths[i] + " loaded."),
+            () => console.error("Failed to load " + imagePaths[i])
           ));
         }
       }
-      console.log("Total images loaded: " + preloadedImages.length);
     }
-    
+
     function setup() {
       createCanvas(windowWidth, windowHeight);
-      // Random number of layers between 5 and 55
       numLayers = int(random(5, 55));
       for (let i = 0; i < numLayers; i++) {
         layers.push(createGraphics(width, height));
@@ -77,11 +46,10 @@
       }
       background(0);
     }
-    
+
     function draw() {
       background(0);
-      
-      // If no images loaded, display a message
+
       if (preloadedImages.length === 0) {
         fill(255);
         textSize(32);
@@ -89,51 +57,51 @@
         text("No images loaded", width / 2, height / 2);
         return;
       }
-      
-      // Process each layer
+
       for (let i = 0; i < layers.length; i++) {
         let gLayer = layers[i];
-        // Pick a random preloaded image
         let img = random(preloadedImages);
+
         if (img) {
-          // Get a copy and resize it to canvas width (keeping aspect ratio)
           let imgCopy = img.get();
           imgCopy.resize(width, 0);
           gLayer.clear();
           gLayer.image(imgCopy, 0, 0);
         }
-        
-        // Create the mask on its offscreen buffer
+
         let gMask = masks[i];
         gMask.clear();
-        // White background: areas to remain visible
-        gMask.background(255);
+        gMask.background(0); // Black base
         gMask.noStroke();
-        gMask.fill(0);
+        gMask.fill(255);     // White shape to reveal parts
+
         gMask.beginShape();
-        // Draw an organic shape with 12 curve vertices
         for (let j = 0; j < 12; j++) {
           let x = random(-width, width * 2);
           let y = random(-height, height * 2);
           gMask.curveVertex(x, y);
         }
         gMask.endShape(CLOSE);
-        // Occasionally add a circle to the mask
+
         if (random(1) < 0.1) {
           gMask.circle(random(width), random(height), random(width / 2));
         }
-        
-        // Capture the drawn image and mask as p5.Image objects
+
         let layerImg = gLayer.get();
         let maskImg = gMask.get();
-        // Apply the mask (black areas become transparent)
+
+        // Convert to grayscale explicitly
+        maskImg.filter(GRAY);
+
+        // Apply mask to layer
         layerImg.mask(maskImg);
-        // Draw the masked layer on the main canvas
+
+        // Render to canvas
         image(layerImg, 0, 0);
       }
     }
 
-       function mousePressed() {
+    function mousePressed() {
       fullscreen(!fullscreen());
     }
 
@@ -142,10 +110,9 @@
         saveCanvas('cb_composition', 'png');
       }
     }
-    
+
     function windowResized() {
       resizeCanvas(windowWidth, windowHeight);
-      // Recreate the graphics buffers to match the new canvas size
       layers = [];
       masks = [];
       for (let i = 0; i < numLayers; i++) {
