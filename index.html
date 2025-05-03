@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>CB Screenplay pictures</title>
+  <title>CB Collage Compositions</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
   <style>
     body { margin: 0; overflow: hidden; }
@@ -23,15 +23,16 @@
       "assets/26.jpg", "assets/27.jpg", "assets/28.jpg", "assets/29.jpg", "assets/30.jpg"
     ];
 
-    let numLayers;
+    let numLayers = 20; // or randomize if needed
+    let layerImages = [];
 
     function preload() {
       for (let i = 0; i < imagePaths.length; i++) {
         if (!imagePaths[i].includes("Store")) {
           preloadedImages.push(loadImage(
             imagePaths[i],
-            () => console.log(imagePaths[i] + " loaded."),
-            () => console.error("Failed to load " + imagePaths[i])
+            () => console.log("Loaded: " + imagePaths[i]),
+            () => console.error("Failed to load: " + imagePaths[i])
           ));
         }
       }
@@ -39,42 +40,27 @@
 
     function setup() {
       createCanvas(windowWidth, windowHeight);
-      numLayers = int(random(5, 55));
-      for (let i = 0; i < numLayers; i++) {
-        layers.push(createGraphics(width, height));
-        masks.push(createGraphics(width, height));
-      }
-      background(0);
+      noLoop(); // only draw once unless manually refreshed
+      generateComposition();
     }
 
-    function draw() {
-      background(0);
+    function generateComposition() {
+      layers = [];
+      masks = [];
+      layerImages = [];
 
-      if (preloadedImages.length === 0) {
-        fill(255);
-        textSize(32);
-        textAlign(CENTER, CENTER);
-        text("No images loaded", width / 2, height / 2);
-        return;
-      }
+      for (let i = 0; i < numLayers; i++) {
+        let gLayer = createGraphics(width, height);
+        let gMask = createGraphics(width, height);
 
-      for (let i = 0; i < layers.length; i++) {
-        let gLayer = layers[i];
-        let img = random(preloadedImages);
+        let img = random(preloadedImages).get();
+        img.resize(width, 0);
+        gLayer.image(img, 0, 0);
 
-        if (img) {
-          let imgCopy = img.get();
-          imgCopy.resize(width, 0);
-          gLayer.clear();
-          gLayer.image(imgCopy, 0, 0);
-        }
-
-        let gMask = masks[i];
-        gMask.clear();
-        gMask.background(0); // Black base
+        // Build mask
+        gMask.background(0);
         gMask.noStroke();
-        gMask.fill(255);     // White shape to reveal parts
-
+        gMask.fill(255);
         gMask.beginShape();
         for (let j = 0; j < 12; j++) {
           let x = random(-width, width * 2);
@@ -82,30 +68,30 @@
           gMask.curveVertex(x, y);
         }
         gMask.endShape(CLOSE);
-
-        if (random(1) < 0.1) {
+        if (random(1) < 0.2) {
           gMask.circle(random(width), random(height), random(width / 2));
         }
 
-        let layerImg = gLayer.get();
-        let maskImg = gMask.get();
-
-        // Convert to grayscale explicitly
-        maskImg.filter(GRAY);
-
-        // Apply mask to layer
-        layerImg.mask(maskImg);
-
-        // Render to canvas
-        image(layerImg, 0, 0);
+        let imgLayer = gLayer.get();
+        let imgMask = gMask.get();
+        imgMask.filter(GRAY);
+        imgLayer.mask(imgMask);
+        layerImages.push(imgLayer);
       }
     }
 
-    function mousePressed() {
-      fullscreen(!fullscreen());
+    function draw() {
+      background(0);
+      for (let img of layerImages) {
+        image(img, 0, 0);
+      }
     }
 
     function keyPressed() {
+      if (key === 'r' || key === 'R') {
+        generateComposition();
+        redraw();
+      }
       if (key === 's' || key === 'S') {
         saveCanvas('cb_composition', 'png');
       }
@@ -113,12 +99,12 @@
 
     function windowResized() {
       resizeCanvas(windowWidth, windowHeight);
-      layers = [];
-      masks = [];
-      for (let i = 0; i < numLayers; i++) {
-        layers.push(createGraphics(width, height));
-        masks.push(createGraphics(width, height));
-      }
+      generateComposition();
+      redraw();
+    }
+
+    function mousePressed() {
+      fullscreen(!fullscreen());
     }
   </script>
 </body>
