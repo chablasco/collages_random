@@ -54,45 +54,55 @@
   }
 
   class Cutout {
-    constructor(img) {
-      this.imgOriginal = img;
-      this.img = img.get();
-      this.img.resize(width, height);
-      this.pg = createGraphics(width, height);
-      this.amount = amount;
-      this.speed = random(0.5, 30.5);
-      this.xs = [];
-      this.ys = [];
+class Cutout {
+  constructor(img) {
+    this.imgOriginal = img;
+    this.img = img.get();
+    this.img.resize(width, height);
+    this.pg = createGraphics(width, height);
+    this.amount = amount;
+    this.speed = random(0.001, 0.005); // very slow for smoothness
+    this.rotation = random(TWO_PI); // initial rotation
+    this.targetRotation = this.rotation;
+    this.xs = [];
+    this.ys = [];
 
-      for (let i = 0; i < this.amount; i++) {
-        this.xs.push(random(-mag, mag));
-        this.ys.push(random(-mag, mag));
-      }
-    }
-
-    display() {
-      this.pg.clear();
-      this.pg.push();
-      this.pg.translate(width / 2 + sin(radians(frameCount)) * mag * 0.5, height / 2);
-      this.pg.rotate(radians(frameCount * this.speed));
-      this.pg.noStroke();
-      this.pg.fill(255);
-      this.pg.beginShape();
-      for (let i = 0; i < this.amount; i++) {
-        this.pg.curveVertex(this.xs[i], this.ys[i]);
-      }
-      this.pg.endShape(CLOSE);
-      this.pg.pop();
-
-      let maskImg = createImage(width, height);
-      maskImg.copy(this.pg, 0, 0, width, height, 0, 0, width, height);
-      maskImg.filter(GRAY);
-
-      let masked = this.img.get();
-      masked.mask(maskImg);
-      image(masked, 0, 0);
+    for (let i = 0; i < this.amount; i++) {
+      this.xs.push(random(-mag, mag));
+      this.ys.push(random(-mag, mag));
     }
   }
+
+  display() {
+    // Smooth rotation update
+    this.targetRotation = sin(millis() * this.speed) * PI;
+    this.rotation = lerp(this.rotation, this.targetRotation, 0.05);
+
+    this.pg.clear();
+    this.pg.push();
+    this.pg.translate(width / 2, height / 2);
+    this.pg.rotate(this.rotation);
+
+    this.pg.noStroke();
+    this.pg.fill(255);
+    this.pg.beginShape();
+    for (let i = 0; i < this.amount; i++) {
+      let offsetX = this.xs[i] + sin(millis() * 0.001 + i) * 50;
+      let offsetY = this.ys[i] + cos(millis() * 0.0012 + i) * 50;
+      this.pg.curveVertex(offsetX, offsetY);
+    }
+    this.pg.endShape(CLOSE);
+    this.pg.pop();
+
+    let maskImg = createImage(width, height);
+    maskImg.copy(this.pg, 0, 0, width, height, 0, 0, width, height);
+    maskImg.filter(GRAY);
+
+    let masked = this.img.get();
+    masked.mask(maskImg);
+    image(masked, 0, 0);
+  }
+}
 
   function keyPressed() {
     if (key === 'r' || key === 'R') {
