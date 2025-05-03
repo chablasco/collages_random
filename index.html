@@ -28,7 +28,7 @@
 
   function preload() {
     for (let path of filenames) {
-      loadedImages.push(loadImage(path));
+      loadedImages.push(loadImage(path, img => img, err => console.warn(`Image load failed: ${path}`)));
     }
   }
 
@@ -47,7 +47,9 @@
   function generateCutouts() {
     cutouts = [];
     for (let img of loadedImages) {
-      cutouts.push(new Cutout(img));
+      if (img) {
+        cutouts.push(new Cutout(img));
+      }
     }
   }
 
@@ -73,7 +75,6 @@
       this.pg.push();
       this.pg.translate(width / 2 + sin(radians(frameCount)) * mag * 0.5, height / 2);
       this.pg.rotate(radians(frameCount * this.speed));
-
       this.pg.noStroke();
       this.pg.fill(255);
       this.pg.beginShape();
@@ -83,10 +84,12 @@
       this.pg.endShape(CLOSE);
       this.pg.pop();
 
+      let maskImg = createImage(width, height);
+      maskImg.copy(this.pg, 0, 0, width, height, 0, 0, width, height);
+      maskImg.filter(GRAY);
+
       let masked = this.img.get();
-      let maskImage = this.pg.get();
-      maskImage.filter(GRAY);
-      masked.mask(maskImage);
+      masked.mask(maskImg);
       image(masked, 0, 0);
     }
   }
@@ -96,7 +99,7 @@
       generateCutouts();
     }
     if (key === 's' || key === 'S') {
-      saveCanvas('cb_collage_composition', 'png');
+      saveCanvas('cb_composition', 'png');
     }
   }
 
